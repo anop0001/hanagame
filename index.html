@@ -14,6 +14,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>痛覚測定実機シミュレーター『ハナゲ・タイムトライアル（JISP-8740準拠）』</title>
+  <meta name="description" content="国際痛覚標準規格「JISP-8740（痛みの単位：ﾊﾅｹﾞ）」準拠！被験者の鼻毛をピンセットで引き抜き、蓄積された総痛覚と等価な生体激痛を判定する痛覚測定Webゲーム。">
+
+  <!-- OGP & X (Twitter) Card -->
+  <meta property="og:title" content="痛覚測定実機シミュレーター『ハナゲ・タイムトライアル（JISP-8740準拠）』">
+  <meta property="og:description" content="制限時間内に鼻毛を引き抜いて痛覚強度を競え！等価痛覚（タンスの角、尿路結石など）をリアルタイム判定！">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hanagame.vercel.app/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="痛覚測定実機シミュレーター『ハナゲ・タイムトライアル』">
+  <meta name="twitter:description" content="被験者の鼻毛を抜いて総痛覚（ﾊﾅｹﾞ値）を測定！等価激痛を競い合え！">
+  <meta name="twitter:url" content="https://hanagame.vercel.app/">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Changa+One&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -3458,13 +3470,12 @@
 
     resSelectedLabelEl.textContent = currentChar.timeLabel;
 
-    const shareText = '【痛覚実証実験】鼻毛を抜きまくった結果、総合痛覚は【' + totalScore.toLocaleString() + ' ﾊﾅｹﾞ】を記録！\\n' +
-                      '被験者：' + currentChar.name + '\\n' +
-                      '判定：' + level.name + '相当の激痛！\\n' +
-                      '国際痛覚規格JISP-8740生体実証シミュレーターで計測中\\n' +
-                      'https://anop.v2006.coreserver.jp/joke/hanage.html\\n' +
-                      '#痛みの単位 #ハナゲゲーム #JISP8740';
-    btnShareXEl.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
+    const shareUrl = 'https://hanagame.vercel.app/';
+    const shareText = '【痛覚実証実験】被験者（' + currentChar.name + '）の鼻毛を抜きまくった結果、総合痛覚は【' + totalScore.toLocaleString() + ' ﾊﾅｹﾞ】を記録！\\n' +
+                      '等価痛覚判定：『' + level.name + '』相当の激痛！\\n' +
+                      '君も痛みの単位「1ﾊﾅｹﾞ」を体感せよ！';
+    const hashtags = 'ハナゲタイムトライアル,痛みの単位,JISP8740';
+    btnShareXEl.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(shareUrl) + '&hashtags=' + encodeURIComponent(hashtags);
 
     resultModalEl.classList.add('show');
   }
