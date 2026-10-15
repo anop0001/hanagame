@@ -18,5 +18,8 @@ template = template.replace('__ASSET_CEL_B64__', b64Cel);
 const targetFile = path.join(dir, 'hanage-game.html');
 fs.writeFileSync(targetFile, template, 'utf8');
 
+const indexFile = path.join(dir, 'index.html');
+fs.writeFileSync(indexFile, template, 'utf8');
+
 const stat = fs.statSync(targetFile);
-console.log('hanage-game.html generated successfully! File size:', stat.size, 'bytes');
+console.log('hanage-game.html and index.html generated successfully! File size:', stat.size, 'bytes');

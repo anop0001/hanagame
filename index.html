@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0828PJ1BWK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-0828PJ1BWK');
+  </script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>痛覚測定実機シミュレーター『ハナゲ・タイムトライアル（JISP-8740準拠）』</title>
@@ -35,6 +45,7 @@
     html, body {
       width: 100%;
       height: 100%;
+      height: 100dvh;
       overflow: hidden;
       background-color: var(--bg-base);
       color: var(--text-main);
@@ -43,6 +54,8 @@
       user-select: none;
       -webkit-user-select: none;
       overscroll-behavior: none;
+      position: fixed;
+      inset: 0;
     }
 
     #app-container {
@@ -50,6 +63,7 @@
       width: 100%;
       max-width: 480px;
       height: 100%;
+      height: 100dvh;
       max-height: 100dvh;
       margin: 0 auto;
       background: radial-gradient(circle at 50% 10%, #131c2e 0%, #060911 100%);
@@ -60,6 +74,7 @@
       border-left: 1px solid var(--border-line);
       border-right: 1px solid var(--border-line);
       overflow: hidden;
+      box-sizing: border-box;
     }
 
     /* スクリーンシェイク */
@@ -1498,6 +1513,149 @@
       background: rgba(0, 240, 181, 0.25);
       border-color: #00f0b5;
     }
+
+    /* ==========================================================================
+       画面ステート制御（待機中 state-standby vs 測定中 state-playing）
+       ========================================================================== */
+
+    /* --- 待機状態 (state-standby: スタート前・リザルト後) --- */
+    /* 鼻腔エリアは完全非表示！お姉さん立ち絵をメイン表示し、スマホのボタン見切れを完全防止 */
+    #app-container.state-standby #game-stage {
+      display: none !important;
+    }
+    #app-container.state-standby #sister-stage {
+      flex: 1 1 auto;
+      min-height: 220px;
+      max-height: none;
+      height: 100%;
+    }
+    #app-container.state-standby footer {
+      flex: 0 0 auto;
+      padding: 10px 14px max(14px, env(safe-area-inset-bottom));
+      background: var(--bg-panel);
+    }
+    #app-container.state-standby .mode-select-row {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    #app-container.state-standby .btn-main {
+      padding: 14px 20px;
+      font-size: 1.15rem;
+      border-radius: 12px;
+      animation: pulse-start-btn 2s infinite ease-in-out;
+    }
+    @keyframes pulse-start-btn {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 20px rgba(0, 240, 181, 0.45);
+      }
+      50% {
+        transform: scale(1.02);
+        box-shadow: 0 6px 28px rgba(0, 240, 181, 0.85);
+      }
+    }
+
+    /* 待機時専用の被験者プロファイルカード（お姉さんステージ内に配置） */
+    .standby-char-card {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      right: 12px;
+      background: rgba(8, 14, 25, 0.88);
+      border: 1.5px solid var(--accent-cyan);
+      border-radius: 10px;
+      padding: 9px 12px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(0, 240, 181, 0.2);
+      z-index: 24;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      pointer-events: none;
+      animation: fadeInStandbyCard 0.3s ease-out;
+    }
+    @keyframes fadeInStandbyCard {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .standby-badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .standby-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      color: var(--accent-cyan);
+      letter-spacing: 0.04em;
+    }
+    .standby-pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent-cyan);
+      animation: pulse-dot 1.2s infinite;
+    }
+    .standby-level-badge {
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: rgba(255, 209, 59, 0.15);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+    .standby-char-quote {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.35;
+      text-shadow: 0 1px 2px #000;
+    }
+    .standby-instruction {
+      font-size: 0.68rem;
+      color: var(--accent-gold);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      margin-top: 1px;
+    }
+
+    /* --- 測定中状態 (state-playing: ゲームプレイ中) --- */
+    #app-container.state-playing .standby-char-card {
+      display: none !important;
+    }
+    #app-container.state-playing #sister-stage {
+      flex: 0 0 140px;
+      min-height: 110px;
+      max-height: 160px;
+    }
+    #app-container.state-playing #game-stage {
+      display: block;
+      flex: 1 1 0;
+      min-height: 220px;
+      animation: unfold-stage 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes unfold-stage {
+      0% { opacity: 0; transform: scaleY(0.95); }
+      100% { opacity: 1; transform: scaleY(1); }
+    }
+    #app-container.state-playing .mode-select-row {
+      display: none !important;
+    }
+    #app-container.state-playing footer {
+      flex: 0 0 auto;
+      padding: 6px 12px max(8px, env(safe-area-inset-bottom));
+      background: var(--bg-panel);
+    }
+    #app-container.state-playing .btn-main {
+      padding: 9px 14px;
+      font-size: 0.92rem;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -1587,7 +1745,7 @@
   </div>
 </div>
 
-<div id="app-container">
+<div id="app-container" class="state-standby">
   <div id="shake-wrapper">
     <!-- 1. ヘッダー / ステータス -->
     <header>
@@ -1645,6 +1803,23 @@
       <div id="just-bonus-banner">★ JUST 500mm/s! (+500 ﾊﾅｹﾞ) ★</div>
       <div id="shout-balloon">ぎゃあああんッ！！</div>
       <div id="breath-balloon">んっ…ッ…</div>
+
+      <!-- 待機中（スタート前）専用の被験者プロファイルカード -->
+      <div id="standby-char-card" class="standby-char-card">
+        <div class="standby-badge-row">
+          <div class="standby-badge">
+            <span class="standby-pulse-dot"></span>
+            <span id="standby-char-role">JISP-8740 被験者: 研究員お姉さん</span>
+          </div>
+          <span id="standby-level-badge" class="standby-level-badge">20秒 モード</span>
+        </div>
+        <div class="standby-char-quote" id="standby-char-quote">
+          「痛覚測定ですね。…少々緊張しますが、研究のためです。いつでもどうぞ。」
+        </div>
+        <div class="standby-instruction">
+          ⚡ 下の【測定開始】をタップすると鼻腔エリアが展開します
+        </div>
+      </div>
 
       <!-- 稲妻エフェクト（SVG描画） -->
       <svg id="lightning-overlay" viewBox="0 0 400 240" xmlns="http://www.w3.org/2000/svg">
@@ -1860,6 +2035,7 @@
       getImage: () => imgGal,
       normalCrop: { sx: 142, sy: 95, sw: 280, sh: 330 },
       painCrop:   { sx: 625, sy: 105, sw: 280, sh: 330 },
+      standbyQuote: '「えっ、ウチのハナゲ抜く気！？マジ痛いのムリだから優しくしてよ！？」',
       holdQuote: 'ちょ、待って…！',
       shoutQuotes: [
         "うそッ！痛いって！！",
@@ -1877,6 +2053,7 @@
       getImage: () => imgRes,
       normalCrop: { sx: 145, sy: 88, sw: 280, sh: 330 },
       painCrop:   { sx: 615, sy: 88, sw: 280, sh: 330 },
+      standbyQuote: '「痛覚測定ですね。…少々緊張しますが、研究のためです。いつでもどうぞ。」',
       holdQuote: 'んっ…ッ…',
       shoutQuotes: [
         "うそっ、痛い…っ！",
@@ -1894,6 +2071,7 @@
       getImage: () => imgCel,
       normalCrop: { sx: 145, sy: 88, sw: 280, sh: 330 },
       painCrop:   { sx: 615, sy: 88, sw: 280, sh: 330 },
+      standbyQuote: '「わたくしの高貴な鼻腔に触れる栄誉を差し上げますわ。手荒な真似はおやめになって？」',
       holdQuote: 'な、何を…ッ',
       shoutQuotes: [
         "無礼者ーーっ！！",
@@ -2067,8 +2245,8 @@
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(f, now);
 
-        gain.gain.setValueAtTime(0.28, now);
-        gain.gain.linearRampToValueAtTime(0.28, now + 0.45);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.linearRampToValueAtTime(0.16, now + 0.45);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
 
         osc.connect(gain);
@@ -2088,7 +2266,7 @@
       
       this.opDroneGain = this.ctx.createGain();
       this.opDroneGain.gain.setValueAtTime(0.01, now);
-      this.opDroneGain.gain.exponentialRampToValueAtTime(0.65, now + 0.4);
+      this.opDroneGain.gain.exponentialRampToValueAtTime(0.32, now + 0.4);
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
@@ -2183,7 +2361,7 @@
       nFilter.frequency.setValueAtTime(2200, now);
       nFilter.Q.setValueAtTime(3.0, now);
       const nGain = this.ctx.createGain();
-      nGain.gain.setValueAtTime(1.0, now);
+      nGain.gain.setValueAtTime(0.45, now);
       nGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
       noise.connect(nFilter);
       nFilter.connect(nGain);
@@ -2195,7 +2373,7 @@
       snap.type = 'square';
       snap.frequency.setValueAtTime(260, now);
       snap.frequency.exponentialRampToValueAtTime(30, now + 0.07);
-      snapGain.gain.setValueAtTime(0.9, now);
+      snapGain.gain.setValueAtTime(0.4, now);
       snapGain.gain.exponentialRampToValueAtTime(0.01, now + 0.07);
       snap.connect(snapGain);
       snapGain.connect(this.ctx.destination);
@@ -2216,7 +2394,7 @@
       expFilter.frequency.setValueAtTime(380, now);
       expFilter.frequency.exponentialRampToValueAtTime(60, now + 0.5);
       const expGain = this.ctx.createGain();
-      expGain.gain.setValueAtTime(1.2, now);
+      expGain.gain.setValueAtTime(0.55, now);
       expGain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
       expNoise.connect(expFilter);
       expFilter.connect(expGain);
@@ -2228,7 +2406,7 @@
       subOsc.type = 'sine';
       subOsc.frequency.setValueAtTime(95, now);
       subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.5);
-      subGain.gain.setValueAtTime(1.0, now);
+      subGain.gain.setValueAtTime(0.45, now);
       subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
       subOsc.connect(subGain);
       subGain.connect(this.ctx.destination);
@@ -2247,7 +2425,7 @@
       screamFilter.frequency.setValueAtTime(1450, now);
       screamFilter.Q.setValueAtTime(2.0, now);
       screamGain.gain.setValueAtTime(0.0, now);
-      screamGain.gain.setValueAtTime(0.7, now + 0.03);
+      screamGain.gain.setValueAtTime(0.38, now + 0.03);
       screamGain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
       screamOsc.connect(screamFilter);
       screamFilter.connect(screamGain);
@@ -2256,36 +2434,165 @@
       screamOsc.stop(now + 0.6);
     }
 
+    /* --- BGM: 令和トレンド Lo-Fi Neo-CityPop BGM（上品な控えめ音量＆エモい和音） --- */
     startMenuBgm() {
       if (!this.enabled || this.isBgmPlaying) return;
       this.init();
       if (!this.ctx) return;
       this.isBgmPlaying = true;
-      const bpm = 138;
-      const stepTime = 60 / bpm / 4;
-      const notes = [
-        130.81, 0, 130.81, 146.83, 164.81, 0, 196.00, 164.81,
-        130.81, 0, 130.81, 146.83, 164.81, 196.00, 220.00, 0,
-        146.83, 0, 146.83, 164.81, 174.61, 0, 220.00, 174.61,
-        196.00, 0, 196.00, 220.00, 246.94, 261.63, 293.66, 0
+
+      // BGMマスターゲイン（控えめで上品な音量に調整）
+      const now = this.ctx.currentTime;
+      this.bgmMasterGain = this.ctx.createGain();
+      this.bgmMasterGain.gain.setValueAtTime(0.0001, now);
+      this.bgmMasterGain.gain.exponentialRampToValueAtTime(0.26, now + 0.8); // 優しくフェードイン
+      this.bgmMasterGain.connect(this.ctx.destination);
+
+      // BPM 92 のチル＆グルーヴィーなテンポ（TikTokやYouTubeで流行のLo-Fi/Neo-CityPop調）
+      const bpm = 92;
+      const beatSec = 60 / bpm;
+      const stepTime = beatSec / 4; // 16分音符（約0.163秒）
+
+      // 4小節（64ステップ）の王道エモ進行：FM7(9) -> E7(b9) -> Am7 -> Gm7-C7
+      const chordFM7 = [174.61, 261.63, 329.63, 392.00]; // F3, C4, E4, G4 (FM7(9))
+      const chordE7  = [164.81, 246.94, 293.66, 370.00]; // E3, B3, D4, F#4 (E7(9))
+      const chordAm7 = [110.00, 261.63, 329.63, 392.00]; // A2, C4, E4, G4 (Am7)
+      const chordGmC = [196.00, 246.94, 293.66, 349.23]; // G3, B3, D4, F4 (G7/C7)
+
+      const chordProg = [
+        chordFM7, chordFM7, chordFM7, chordFM7,
+        chordE7,  chordE7,  chordE7,  chordE7,
+        chordAm7, chordAm7, chordAm7, chordAm7,
+        chordGmC, chordGmC, chordGmC, chordGmC
       ];
+
+      // グルーヴィーなLo-Fiベース進行 (Hz)
+      const bassProg = [
+        87.31, 0, 87.31, 0,  87.31, 0, 98.00, 0,
+        82.41, 0, 82.41, 0,  82.41, 0, 73.42, 0,
+        110.00, 0, 110.00, 0, 110.00, 123.47, 130.81, 0,
+        98.00, 0, 98.00, 0,  65.41, 0, 73.42, 0
+      ];
+
       let step = 0;
       this.bgmTimer = setInterval(() => {
-        if (!this.enabled || !this.isBgmPlaying || !this.ctx) return;
-        const freq = notes[step % notes.length];
-        if (freq > 0) {
-          const now = this.ctx.currentTime;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = (step % 4 === 0) ? 'triangle' : 'square';
-          osc.frequency.setValueAtTime(freq, now);
-          gain.gain.setValueAtTime(0.065, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + stepTime * 1.5);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now);
-          osc.stop(now + stepTime * 1.8);
+        if (!this.enabled || !this.isBgmPlaying || !this.ctx || !this.bgmMasterGain) return;
+        const currentNow = this.ctx.currentTime;
+        const barStep = step % 64;
+        const beatInBar = Math.floor(barStep / 4);
+        const subStep = barStep % 4;
+
+        // 1. エレピ・コード（ローパスフィルターを通した温かいローズピアノ風サウンド）
+        if (subStep === 0 || (subStep === 2 && (barStep % 8 === 2 || barStep % 8 === 6))) {
+          const chordIndex = Math.floor(barStep / 4) % chordProg.length;
+          const chord = chordProg[chordIndex];
+          chord.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, currentNow);
+
+            // 温かいエレピフィルター（ローパス 1100Hz -> 600Hz）
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1100, currentNow);
+            filter.frequency.exponentialRampToValueAtTime(550, currentNow + stepTime * 2.5);
+
+            // 音量は極めて上品・控えめ（0.016）
+            gain.gain.setValueAtTime(0.016, currentNow);
+            gain.gain.exponentialRampToValueAtTime(0.0001, currentNow + stepTime * 2.8);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.bgmMasterGain);
+
+            osc.start(currentNow);
+            osc.stop(currentNow + stepTime * 3.0);
+          });
         }
+
+        // 2. Lo-Fi サブベース（丸く包み込む低域）
+        const bassFreq = bassProg[Math.floor(barStep / 2) % bassProg.length];
+        if (subStep % 2 === 0 && bassFreq > 0) {
+          const bOsc = this.ctx.createOscillator();
+          const bGain = this.ctx.createGain();
+          bOsc.type = 'sine';
+          bOsc.frequency.setValueAtTime(bassFreq, currentNow);
+
+          bGain.gain.setValueAtTime(0.024, currentNow);
+          bGain.gain.exponentialRampToValueAtTime(0.0001, currentNow + stepTime * 1.8);
+
+          bOsc.connect(bGain);
+          bGain.connect(this.bgmMasterGain);
+          bOsc.start(currentNow);
+          bOsc.stop(currentNow + stepTime * 2.0);
+        }
+
+        // 3. チル・パーカッション（やわらかなキック・スネア・ハイハット）
+        // キック（1拍目、3拍目裏など）
+        if (subStep === 0 && (beatInBar % 2 === 0 || (beatInBar === 3 && subStep === 0))) {
+          const kOsc = this.ctx.createOscillator();
+          const kGain = this.ctx.createGain();
+          kOsc.type = 'sine';
+          kOsc.frequency.setValueAtTime(85, currentNow);
+          kOsc.frequency.exponentialRampToValueAtTime(36, currentNow + 0.12);
+
+          kGain.gain.setValueAtTime(0.028, currentNow);
+          kGain.gain.exponentialRampToValueAtTime(0.0001, currentNow + 0.14);
+
+          kOsc.connect(kGain);
+          kGain.connect(this.bgmMasterGain);
+          kOsc.start(currentNow);
+          kOsc.stop(currentNow + 0.15);
+        }
+
+        // スネア／リムショット（2拍目・4拍目）
+        if (subStep === 0 && beatInBar % 2 === 1) {
+          const snBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.05, this.ctx.sampleRate);
+          const snData = snBuf.getChannelData(0);
+          for (let i = 0; i < snData.length; i++) snData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (snData.length * 0.3));
+          const snNode = this.ctx.createBufferSource();
+          snNode.buffer = snBuf;
+
+          const snFilter = this.ctx.createBiquadFilter();
+          snFilter.type = 'bandpass';
+          snFilter.frequency.setValueAtTime(1400, currentNow);
+          snFilter.Q.setValueAtTime(1.8, currentNow);
+
+          const snGain = this.ctx.createGain();
+          snGain.gain.setValueAtTime(0.012, currentNow);
+          snGain.gain.exponentialRampToValueAtTime(0.0001, currentNow + 0.05);
+
+          snNode.connect(snFilter);
+          snFilter.connect(snGain);
+          snGain.connect(this.bgmMasterGain);
+          snNode.start(currentNow);
+        }
+
+        // ハイハット（16分音符の刻み、繊細にシャッシャッ）
+        if (subStep % 2 === 0 || subStep === 3) {
+          const hhBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.02, this.ctx.sampleRate);
+          const hhData = hhBuf.getChannelData(0);
+          for (let i = 0; i < hhData.length; i++) hhData[i] = Math.random() * 2 - 1;
+          const hhNode = this.ctx.createBufferSource();
+          hhNode.buffer = hhBuf;
+
+          const hhFilter = this.ctx.createBiquadFilter();
+          hhFilter.type = 'highpass';
+          hhFilter.frequency.setValueAtTime(6500, currentNow);
+
+          const hhGain = this.ctx.createGain();
+          const vel = (subStep === 0) ? 0.007 : 0.004;
+          hhGain.gain.setValueAtTime(vel, currentNow);
+          hhGain.gain.exponentialRampToValueAtTime(0.0001, currentNow + 0.02);
+
+          hhNode.connect(hhFilter);
+          hhFilter.connect(hhGain);
+          hhGain.connect(this.bgmMasterGain);
+          hhNode.start(currentNow);
+        }
+
         step++;
       }, stepTime * 1000);
     }
@@ -2295,6 +2602,21 @@
       if (this.bgmTimer) {
         clearInterval(this.bgmTimer);
         this.bgmTimer = null;
+      }
+      if (this.bgmMasterGain && this.ctx) {
+        try {
+          const now = this.ctx.currentTime;
+          this.bgmMasterGain.gain.setValueAtTime(this.bgmMasterGain.gain.value, now);
+          this.bgmMasterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+          setTimeout(() => {
+            if (this.bgmMasterGain) {
+              try { this.bgmMasterGain.disconnect(); } catch (e) {}
+              this.bgmMasterGain = null;
+            }
+          }, 300);
+        } catch (e) {
+          this.bgmMasterGain = null;
+        }
       }
     }
   }
@@ -2873,6 +3195,11 @@
   let pointerPrevTime = 0;
   let dragSpeed = 0;
 
+  const appContainerEl = document.getElementById('app-container');
+  const standbyCharRoleEl = document.getElementById('standby-char-role');
+  const standbyLevelBadgeEl = document.getElementById('standby-level-badge');
+  const standbyCharQuoteEl = document.getElementById('standby-char-quote');
+
   const timerValEl = document.getElementById('timer-val');
   const scoreValEl = document.getElementById('score-val');
   const hairCountBadgeEl = document.getElementById('hair-count-badge');
@@ -2910,10 +3237,24 @@
     audioIconEl.textContent = isEnabled ? '🔊' : '🔇';
   });
 
+  function updateStandbyCard() {
+    if (!currentChar) return;
+    if (standbyCharRoleEl) {
+      standbyCharRoleEl.textContent = 'JISP-8740 被験者: ' + currentChar.name;
+    }
+    if (standbyLevelBadgeEl) {
+      standbyLevelBadgeEl.textContent = currentChar.timeLabel;
+    }
+    if (standbyCharQuoteEl) {
+      standbyCharQuoteEl.textContent = currentChar.standbyQuote || '';
+    }
+  }
+
   function selectMode(sec) {
     currentDuration = sec;
     remainingTime = sec;
     sister.updateChar(sec);
+    updateStandbyCard();
 
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.classList.toggle('active', parseInt(b.dataset.time, 10) === sec);
@@ -2958,9 +3299,23 @@
     startGame();
   });
 
+  function returnToStandby() {
+    isGameRunning = false;
+    appContainerEl.classList.remove('state-playing');
+    appContainerEl.classList.add('state-standby');
+    btnStartEl.classList.remove('running');
+    btnTextEl.textContent = "測定開始 (START)";
+    btnIconEl.textContent = "⚡";
+    sister.reset();
+    updateStandbyCard();
+    requestAnimationFrame(() => {
+      resizeCharCanvas();
+    });
+  }
+
   btnCloseModalEl.addEventListener('click', () => {
     resultModalEl.classList.remove('show');
-    sister.reset();
+    returnToStandby();
   });
 
   function startGame() {
@@ -2975,6 +3330,10 @@
     timerValEl.textContent = remainingTime.toFixed(1);
     timerValEl.classList.remove('danger');
 
+    // ★ 画面ステートをプレイ中に切り替え（鼻腔エリア展開・お姉さんコンパクト化・モード選択非表示）
+    appContainerEl.classList.remove('state-standby');
+    appContainerEl.classList.add('state-playing');
+
     btnStartEl.classList.add('running');
     btnTextEl.textContent = "測定中止 (ABORT)";
     btnIconEl.textContent = "⏹";
@@ -2982,17 +3341,18 @@
     resultModalEl.classList.remove('show');
     pullGuideToastEl.style.display = 'none';
 
-    sister.reset();
-    initHairs();
-    updateTicker();
+    // ★ DOMレイアウト反映後にCanvasサイズを確定し、毛を再初期化
+    requestAnimationFrame(() => {
+      resizeCanvas();
+      resizeCharCanvas();
+      sister.reset();
+      initHairs();
+      updateTicker();
+    });
   }
 
   function stopGame() {
     isGameRunning = false;
-    btnStartEl.classList.remove('running');
-    btnTextEl.textContent = "測定開始 (START)";
-    btnIconEl.textContent = "⚡";
-
     sound.playBuzzer();
     sister.reset();
     showResult();
@@ -3648,11 +4008,11 @@
   function tryInitGame() {
     if (isGameInitialized) return;
     isGameInitialized = true;
-    resizeCharCanvas();
-    resizeCanvas();
-    initHairs();
+    appContainerEl.classList.add('state-standby');
     selectMode(20);
+    resizeCharCanvas();
     updateTicker();
+    updateStandbyCard();
     requestAnimationFrame(gameLoop);
     opController.start();
   }
