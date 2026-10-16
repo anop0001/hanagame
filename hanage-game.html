@@ -3477,12 +3477,14 @@
 
     resSelectedLabelEl.textContent = currentChar.timeLabel;
 
-    const shareUrl = 'https://hanagame.vercel.app/';
-    const shareText = '【痛覚実証実験】被験者（' + currentChar.name + '）の鼻毛を抜きまくった結果、総合痛覚は【' + totalScore.toLocaleString() + ' ﾊﾅｹﾞ】を記録！\\n' +
-                      '等価痛覚判定：『' + level.name + '』相当の激痛！\\n' +
-                      '君も痛みの単位「1ﾊﾅｹﾞ」を体感せよ！';
-    const hashtags = 'ハナゲタイムトライアル,痛みの単位,JISP8740';
-    btnShareXEl.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText) + '&url=' + encodeURIComponent(shareUrl) + '&hashtags=' + encodeURIComponent(hashtags);
+    const shareText = '【速報】美女の鼻毛を抜いたら、とんでもない結果にｗ\\n\\n' +
+                      '💥 痛覚スコア：' + totalScore.toLocaleString() + 'ﾊﾅｹﾞ\\n' +
+                      '😱 判定：' + level.name + '相当！\\n\\n' +
+                      'あなたは何ﾊﾅｹﾞ叩き出せる？\\n\\n' +
+                      '👇 無料で鼻毛を抜く\\n' +
+                      'https://hanagame.vercel.app/\\n\\n' +
+                      '#ハナゲタイムトライアル #JISP8740';
+    btnShareXEl.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
 
     resultModalEl.classList.add('show');
   }
