@@ -13,6 +13,9 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>痛覚測定実機シミュレーター『ハナゲ・タイムトライアル（JISP-8740準拠）』</title>
   <meta name="description" content="国際痛覚標準規格「JISP-8740（痛みの単位：ﾊﾅｹﾞ）」準拠！被験者の鼻毛をピンセットで引き抜き、蓄積された総痛覚と等価な生体激痛を判定する痛覚測定Webゲーム。">
 
@@ -1842,7 +1845,7 @@
       <div class="header-top">
         <div class="spec-badge">
           <span class="dot"></span>
-          <span>JISP-8740:2026 CALIBRATED</span>
+          <span>JISP-8740:2026 (v1.3.0)</span>
         </div>
         <button id="btn-op-replay" class="btn-op-replay" title="オープニング演出を再生">
           <span>▶</span> OP演出
@@ -1962,24 +1965,24 @@
     <!-- 4. 操作・フッター -->
     <footer>
       <div class="mode-select-row">
-        <button class="mode-btn" data-time="10">
+        <button type="button" class="mode-btn" data-time="10">
           <span>超激痛スプリント</span>
           <span class="mode-sec">10秒 (ギャル)</span>
         </button>
-        <button class="mode-btn active" data-time="20">
+        <button type="button" class="mode-btn active" data-time="20">
           <span>悶絶スタンダード</span>
           <span class="mode-sec">20秒 (研究員)</span>
         </button>
-        <button class="mode-btn" data-time="30">
+        <button type="button" class="mode-btn" data-time="30">
           <span>救急搬送エンドレス</span>
           <span class="mode-sec">30秒 (セレブ)</span>
         </button>
       </div>
 
       <div class="action-row">
-        <button id="btn-start" class="btn-main">
+        <button type="button" id="btn-start" class="btn-main">
           <span id="btn-icon">⚡</span>
-          <span id="btn-text">測定開始 (START)</span>
+          <span id="btn-text">研究員お姉さん で測定開始 (START)</span>
         </button>
       </div>
     </footer>
@@ -2057,15 +2060,15 @@
           <span id="res-selected-label">20秒 (研究員)</span>
         </div>
         <div class="res-mode-buttons">
-          <button class="res-mode-btn" data-time="10">
+          <button type="button" class="res-mode-btn" data-time="10">
             <span>超激痛</span>
             <span class="res-sec">10s ギャル</span>
           </button>
-          <button class="res-mode-btn active" data-time="20">
+          <button type="button" class="res-mode-btn active" data-time="20">
             <span>悶絶標準</span>
             <span class="res-sec">20s 研究員</span>
           </button>
-          <button class="res-mode-btn" data-time="30">
+          <button type="button" class="res-mode-btn" data-time="30">
             <span>救急搬送</span>
             <span class="res-sec">30s セレブ</span>
           </button>
@@ -3402,6 +3405,11 @@
     modeBadgeLabelEl.textContent = sec + 's';
     timerValEl.textContent = sec.toFixed(1);
     tickerContentEl.textContent = '被験者：' + currentChar.name + '（' + currentChar.desc + '）';
+
+    // 測定前待機中なら、STARTボタンの文言に被験者名を即座に反映（待機状態であることを視覚的に100%明示）
+    if (!isGameRunning && !isCountingDown) {
+      btnTextEl.textContent = currentChar.name + ' で測定開始 (START)';
+    }
   }
 
   function cancelCountdown() {
@@ -3493,7 +3501,9 @@
   }
 
   document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (isGameRunning || isCountingDown) return;
       const sec = parseInt(btn.dataset.time, 10);
       selectMode(sec);
@@ -3501,13 +3511,16 @@
   });
 
   document.querySelectorAll('.res-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const sec = parseInt(btn.dataset.time, 10);
       selectMode(sec);
     });
   });
 
-  btnStartEl.addEventListener('click', () => {
+  btnStartEl.addEventListener('click', (e) => {
+    e.preventDefault();
     sound.init();
     if (!isGameRunning && !isCountingDown) {
       startWithCountdown(currentDuration);
@@ -3517,7 +3530,8 @@
     }
   });
 
-  btnRetrySelectedEl.addEventListener('click', () => {
+  btnRetrySelectedEl.addEventListener('click', (e) => {
+    e.preventDefault();
     resultModalEl.classList.remove('show');
     startWithCountdown(currentDuration);
   });
@@ -3528,7 +3542,7 @@
     appContainerEl.classList.remove('state-playing');
     appContainerEl.classList.add('state-standby');
     btnStartEl.classList.remove('running');
-    btnTextEl.textContent = "測定開始 (START)";
+    btnTextEl.textContent = (currentChar ? currentChar.name + " で" : "") + "測定開始 (START)";
     btnIconEl.textContent = "⚡";
     sister.reset();
     updateStandbyCard();
