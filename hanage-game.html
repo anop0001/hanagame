@@ -1675,6 +1675,77 @@
       font-size: 0.92rem;
       border-radius: 8px;
     }
+
+    /* ==========================================================================
+       3秒カウントダウン演出オーバーレイ
+       ========================================================================== */
+    .countdown-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at center, rgba(6, 12, 24, 0.78) 0%, rgba(4, 7, 14, 0.9) 100%);
+      backdrop-filter: blur(5px);
+      z-index: 80;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .countdown-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .countdown-number {
+      font-family: 'Share Tech Mono', 'M PLUS Rounded 1c', sans-serif;
+      font-size: 6.5rem;
+      font-weight: 900;
+      color: var(--accent-gold);
+      text-shadow: 0 0 25px rgba(255, 209, 59, 0.95), 0 0 50px rgba(255, 45, 109, 0.6);
+      line-height: 1;
+      transform: scale(0.5);
+      opacity: 0;
+    }
+
+    .countdown-number.pop {
+      animation: count-pop 0.92s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+    }
+
+    @keyframes count-pop {
+      0% { transform: scale(0.35); opacity: 0; }
+      20% { transform: scale(1.15); opacity: 1; }
+      35% { transform: scale(1.0); opacity: 1; }
+      80% { transform: scale(1.0); opacity: 1; }
+      100% { transform: scale(1.28); opacity: 0; }
+    }
+
+    .countdown-number.start-pop {
+      font-size: 4.2rem;
+      color: var(--accent-cyan);
+      text-shadow: 0 0 35px rgba(0, 240, 181, 0.98), 0 0 70px rgba(0, 240, 181, 0.6);
+      animation: count-start-pop 0.7s ease-out forwards;
+    }
+
+    @keyframes count-start-pop {
+      0% { transform: scale(0.4); opacity: 0; }
+      25% { transform: scale(1.22); opacity: 1; }
+      45% { transform: scale(1.0); opacity: 1; }
+      75% { transform: scale(1.06); opacity: 1; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    .countdown-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #f0f6fc;
+      letter-spacing: 0.22em;
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -1912,6 +1983,12 @@
         </button>
       </div>
     </footer>
+
+    <!-- 3秒前カウントダウン演出オーバーレイ -->
+    <div id="countdown-overlay" class="countdown-overlay">
+      <div id="countdown-number" class="countdown-number">3</div>
+      <div id="countdown-sub" class="countdown-sub">READY...</div>
+    </div>
   </div>
 
   <!-- 5. リザルト画面（モーダル） -->
@@ -2250,6 +2327,38 @@
       gain.connect(this.ctx.destination);
       osc.start(now);
       osc.stop(now + 0.3);
+    }
+
+    playCountdownBeep(isStart = false) {
+      if (!this.enabled) return;
+      this.init();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      if (!isStart) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(659.25, now);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      } else {
+        [783.99, 1046.50, 1567.98].forEach((f, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.04);
+          gain.gain.setValueAtTime(0.24, now + i * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + i * 0.04);
+          osc.stop(now + i * 0.04 + 0.38);
+        });
+      }
     }
 
     playBuzzer() {
@@ -3202,6 +3311,8 @@
   }
 
   let isGameRunning = false;
+  let isCountingDown = false;
+  let countdownTimer = null;
   let remainingTime = 20.0;
   let totalScore = 0;
   let hairCounts = { normal: 0, thick: 0, silver: 0, gold: 0, total: 0 };
@@ -3218,6 +3329,10 @@
   const standbyCharRoleEl = document.getElementById('standby-char-role');
   const standbyLevelBadgeEl = document.getElementById('standby-level-badge');
   const standbyCharQuoteEl = document.getElementById('standby-char-quote');
+
+  const countdownOverlayEl = document.getElementById('countdown-overlay');
+  const countdownNumberEl = document.getElementById('countdown-number');
+  const countdownSubEl = document.getElementById('countdown-sub');
 
   const timerValEl = document.getElementById('timer-val');
   const scoreValEl = document.getElementById('score-val');
@@ -3289,36 +3404,126 @@
     tickerContentEl.textContent = '被験者：' + currentChar.name + '（' + currentChar.desc + '）';
   }
 
+  function cancelCountdown() {
+    isCountingDown = false;
+    if (countdownTimer) {
+      clearTimeout(countdownTimer);
+      countdownTimer = null;
+    }
+    if (countdownOverlayEl) {
+      countdownOverlayEl.classList.remove('show');
+    }
+  }
+
+  function startWithCountdown(sec) {
+    sound.init();
+    sound.stopMenuBgm();
+    cancelCountdown();
+
+    if (sec) {
+      selectMode(sec);
+    }
+
+    isCountingDown = true;
+    isGameRunning = false;
+    remainingTime = currentDuration;
+    totalScore = 0;
+    hairCounts = { normal: 0, thick: 0, silver: 0, gold: 0, total: 0 };
+
+    scoreValEl.textContent = "0";
+    hairCountBadgeEl.textContent = "0 本";
+    timerValEl.textContent = remainingTime.toFixed(1);
+    timerValEl.classList.remove('danger');
+
+    // 画面ステートをプレイ中へ展開（鼻腔エリア表示、お姉さんコンパクト化）
+    appContainerEl.classList.remove('state-standby');
+    appContainerEl.classList.add('state-playing');
+
+    btnStartEl.classList.add('running');
+    btnTextEl.textContent = "測定中止 (ABORT)";
+    btnIconEl.textContent = "⏹";
+
+    resultModalEl.classList.remove('show');
+    pullGuideToastEl.style.display = 'none';
+
+    // DOMレイアウト反映後にCanvasサイズを確定し、毛を再初期化
+    requestAnimationFrame(() => {
+      resizeCanvas();
+      resizeCharCanvas();
+      sister.reset();
+      initHairs();
+      updateTicker();
+    });
+
+    // 3秒前カウントダウン演出の開始
+    countdownOverlayEl.classList.add('show');
+
+    function triggerCountdown(count) {
+      if (!isCountingDown) return;
+
+      countdownNumberEl.className = 'countdown-number';
+      void countdownNumberEl.offsetWidth; // CSSアニメーション再発火
+
+      if (count > 0) {
+        countdownNumberEl.textContent = count;
+        countdownSubEl.textContent = 'READY...';
+        countdownNumberEl.classList.add('pop');
+        sound.playCountdownBeep(false);
+
+        countdownTimer = setTimeout(() => {
+          triggerCountdown(count - 1);
+        }, 1000);
+      } else {
+        countdownNumberEl.textContent = 'START!!';
+        countdownSubEl.textContent = 'PULL HAIRS!';
+        countdownNumberEl.classList.add('start-pop');
+        sound.playCountdownBeep(true);
+
+        // カウントダウン完了：タイマー減算＆毛の引き抜き解禁！
+        isCountingDown = false;
+        isGameRunning = true;
+
+        countdownTimer = setTimeout(() => {
+          countdownOverlayEl.classList.remove('show');
+        }, 650);
+      }
+    }
+
+    triggerCountdown(3);
+  }
+
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (isGameRunning) return;
+      if (isGameRunning || isCountingDown) return;
       const sec = parseInt(btn.dataset.time, 10);
-      selectMode(sec);
+      startWithCountdown(sec);
     });
   });
 
   document.querySelectorAll('.res-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sec = parseInt(btn.dataset.time, 10);
-      selectMode(sec);
+      startWithCountdown(sec);
     });
   });
 
   btnStartEl.addEventListener('click', () => {
     sound.init();
-    if (!isGameRunning) {
-      startGame();
+    if (!isGameRunning && !isCountingDown) {
+      startWithCountdown(currentDuration);
     } else {
+      cancelCountdown();
       stopGame();
     }
   });
 
   btnRetrySelectedEl.addEventListener('click', () => {
     resultModalEl.classList.remove('show');
-    startGame();
+    startWithCountdown(currentDuration);
   });
 
   function returnToStandby() {
+    cancelCountdown();
     isGameRunning = false;
     appContainerEl.classList.remove('state-playing');
     appContainerEl.classList.add('state-standby');
@@ -3337,40 +3542,8 @@
     returnToStandby();
   });
 
-  function startGame() {
-    sound.stopMenuBgm();
-    isGameRunning = true;
-    remainingTime = currentDuration;
-    totalScore = 0;
-    hairCounts = { normal: 0, thick: 0, silver: 0, gold: 0, total: 0 };
-
-    scoreValEl.textContent = "0";
-    hairCountBadgeEl.textContent = "0 本";
-    timerValEl.textContent = remainingTime.toFixed(1);
-    timerValEl.classList.remove('danger');
-
-    // ★ 画面ステートをプレイ中に切り替え（鼻腔エリア展開・お姉さんコンパクト化・モード選択非表示）
-    appContainerEl.classList.remove('state-standby');
-    appContainerEl.classList.add('state-playing');
-
-    btnStartEl.classList.add('running');
-    btnTextEl.textContent = "測定中止 (ABORT)";
-    btnIconEl.textContent = "⏹";
-
-    resultModalEl.classList.remove('show');
-    pullGuideToastEl.style.display = 'none';
-
-    // ★ DOMレイアウト反映後にCanvasサイズを確定し、毛を再初期化
-    requestAnimationFrame(() => {
-      resizeCanvas();
-      resizeCharCanvas();
-      sister.reset();
-      initHairs();
-      updateTicker();
-    });
-  }
-
   function stopGame() {
+    cancelCountdown();
     isGameRunning = false;
     sound.playBuzzer();
     sister.reset();
@@ -3507,7 +3680,7 @@
 
   canvas.addEventListener('pointerdown', (e) => {
     sound.init();
-    if (activePointerId !== null) return;
+    if (!isGameRunning || isCountingDown || activePointerId !== null) return;
 
     activePointerId = e.pointerId;
     canvas.setPointerCapture(e.pointerId);
