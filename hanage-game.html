@@ -3496,14 +3496,14 @@
     btn.addEventListener('click', () => {
       if (isGameRunning || isCountingDown) return;
       const sec = parseInt(btn.dataset.time, 10);
-      startWithCountdown(sec);
+      selectMode(sec);
     });
   });
 
   document.querySelectorAll('.res-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sec = parseInt(btn.dataset.time, 10);
-      startWithCountdown(sec);
+      selectMode(sec);
     });
   });
 
